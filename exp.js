@@ -38,7 +38,7 @@ var applications = require(__dirname + '/system/applications.js');
 
 /* CONFIGURE APPLICATION. */
 app.use(cors())
-app.use(express.static('C:/Users/Rahee/server'))
+app.use(express.static('server'))
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true })); 
 app.use(cookieParser());
@@ -52,7 +52,7 @@ function choke(){
   db = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "DEFINITION991337OVER9000DIVIDEDBY10",
+    password: "",
     multipleStatements: true
   });
   /* CONNECT TO THE DB */
@@ -84,49 +84,24 @@ app.all('*', function(request, response, next){
     }
     console.log(' - PING \n - USERNAME - ' + (request.cookieData ? request.cookieData.Username : 'UNKNOWN') + '\n - DATE - ' + new Date() + ' \n - IP - ' + request.ip + ' \n - URL - ' + request.headers.host + request.originalUrl);
     db.query(
-      "SELECT * FROM Client.Hosting WHERE LOWER(App) = LOWER(?)",
+      "SELECT * FROM GodPanel.Banlist WHERE IP = ? OR Username = ?",
       [
-        request.appname
-
+        request.ip,
+        (request.cookieData) ? request.cookieData['Username'] : "~"
       ],
-      function(error, hosting){
+      function(error, banlist){
         db.query(
-          "SELECT * FROM GodPanel.Banlist WHERE IP = ? OR Username = ?",
+          "SELECT * FROM GodPanel.Offline",
           [
-            request.ip,
-            (request.cookieData) ? request.cookieData['Username'] : "~"
-          ],
-          function(error, banlist){
-            db.query(
-              "SELECT * FROM GodPanel.Offline",
-              [
 
-              ],
-              function(error, offline){
-                if(offline[0]['Offline'] == '1' && request.cookieData['Username'] != 'Rah1337' && request.cookieData['Username'] != 'Momo'){
-                    response.send(fs.readFileSync(__dirname + '/system/offline.html').toString());
-                    response.end();
-                }else{
-                  if(banlist[0]){             
-                    response.send(fs.readFileSync(__dirname + '/system/banned.html').toString());
-                    response.end();
-                  }else{
-                    try{
-                      if(Date.now() > hosting[0]['Until']){
-                        response.send(fs.readFileSync(__dirname + '/system/hosting.html').toString());
-                        response.end();
-                      }else{
-                        next();
-                      }
-                    }catch(e){
-                      next();
-                    }
-                  }
-                }
-              }
-            );
+          ],
+          function(error, offline){
+            if(offline[0]['Offline'] == '1' && request.cookieData['Username'] != 'Rah1337' && request.cookieData['Username'] != 'Momo'){
+                response.send(fs.readFileSync(__dirname + '/system/offline.html').toString());
+                response.end();
+            }
           }
-        );        
+        );
       }
     );
   });
