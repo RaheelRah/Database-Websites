@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html><head>	
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- APPLICATION ASSETS -->
+	<link type="text/css" rel="stylesheet" href="/assets/css.css"/>
+	<!-- JQUERY AND POPPER.JS -->
+	<script type="text/javascript" src="/assets/jQuery.js"></script>
+	<script type="text/javascript" src="/assets/popper.js"></script>
+	<!-- SOCKET.IO AND SOCKET-->
+	<script type="text/javascript" src="/assets/socket.io.min.js"></script>
+	<!-- BOOTSTRAP JS AND CSS -->
+	<script type="text/javascript" src="/assets/bootstrap.min.js"></script>
+	<link type="text/css" rel="stylesheet" href="/assets/bootstrap.min.css"/>
+</head><body>
+	<!-- boilerplate -->
+	<h3 id="boilerplate" class="text-primary p-1 m-1"></h3>
+	<!-- description -->
+	<span id="desc" class="text-light p-2"></span>
+	<!-- links -->
+	<nav class="navbar p-2 m-0"><div class="btn-group" id="links"></div></nav>
+	<!-- container -->
+	<div class="row w-100 mx-auto p-0"><div class="col-12" id="data-html-container"></div></div>
+	<script type="text/javascript">
+		/* DataRepeat, DataObject, XMLHTTPRequest, mergeObject Functions */
+		function dataObject(element, data){
+			key = element.innerHTML.substring(element.innerHTML.indexOf("{{") + 2, element.innerHTML.indexOf("}}"));
+			console.log(element, key, data)
+			if(data[key] != undefined){
+				element.innerHTML = element.innerHTML.substring(0, element.innerHTML.indexOf("{{")) + data[key] + element.innerHTML.substring(element.innerHTML.indexOf("}}") + 2, element.innerHTML.length);
+			}
+			element.removeAttribute('data-repeat');
+			element.style = "display: block";
+			if(element.innerHTML.indexOf("}}") != -1){
+				dataObject(element, data);
+			}
+		}
+		function dataRepeat(element, path, persist){
+			dr = document.querySelectorAll('[data-repeat]')
+			for(x in app.data){
+				if(app.data[x][path]){
+					z = element.cloneNode(true)
+					z.removeAttribute('data-repeat');
+					element.parentNode.appendChild(z);
+					dataObject(z, app.data[x][path]);
+				}
+			}
+			for(i = 0; i < dr.length; i++){
+				persist = persist + 1;
+				if(persist < 3){
+					dataRepeat(dr[i], dr[i].getAttribute('[data-repeat]'), persist);
+				}
+			}
+		}
+		function order(method, url, data, async){
+			xml = new XMLHttpRequest();
+			xml.open(method, url, !(!async));
+			if(method == "POST"){
+				xml.send(JSON.stringify(data));
+			}else{
+				xml.send();
+			}
+			return xml.responseText;
+		}
+		function iterateObject(obj, cb){
+			path = [];
+			object = obj;
+			function z(object, obj, path){
+				/* THE IDEA IS TO CREATE A RECURSIVE FUNCTION IF OBJ[X] IS AN OBJECT. */
+				for(x in obj){
+					path.push(x)
+					if(typeof obj[x] == 'object'){
+						z(object, obj[x], path);
+					}else{
+						cb(object, path, obj[x]);
+					}
+					path.pop();
+				}
+			}
+			z(object, obj, []);
+		}
+		function mergeObjects(base, update){
+			//LOOP THROUGH OBJECT A.
+			iterateObject(update, function(obj, path, val){
+				object = base;
+				for(i = 0; i < path.length; i++){
+					if(path.length - 1 == i){
+						try{
+							object[path[i]] = {};
+							object[path[i]] = val;
+						}catch(e){
+
+						}
+					}else{
+						try{
+							if(!object[path[i]]){
+								object[path[i]] = {};
+							}
+							object = object[path[i]];
+						}catch(e){
+
+						}
+					}
+				}
+			});
+			return base;
+		}
+		
+		/* Application loading interface - BoilerPlate; Description; Links; Modules.*/
+		if(!app){
+			app = {};
+		}
+		app.data = {};
+		app.data_str = {};
+		function boilerplate(){
+			document.getElementById('boilerplate').innerHTML = app.boilerplate;
+			document.getElementById('desc').innerHTML = app.desc;
+		}
+		boilerplate();
+		function applinks(){
+			for(x in app.links){
+				link_val = app.links[x];
+				link_el = document.createElement('button')
+				link_el.innerHTML = link_val.substring(0, 1).toUpperCase() + link_val.substring(1, link_val.length);
+				link_el.classList.add('btn', 'btn-primary');
+				link_el.setAttribute('onclick', 'window.location = "' + x + '"');
+				document.getElementById('links').appendChild(link_el);
+			}
+		}
+		applinks();
+		function appmodules(r){
+			setTimeout(function(){
+				d = order("GET", "/modules/" + app.modules[r]);
+				document.getElementById('data-html-container').innerHTML +=	d;
+				el = document.createElement('div');
+				el.innerHTML = d;
+				scripts = el.getElementsByTagName('script');
+				for(x in scripts){
+					eval(scripts[x].innerHTML);
+				}
+				if(r < app.modules.length - 1){
+					r++;
+					appmodules(r);
+				}
+			}, 1000);
+		}
+		appmodules(0);
+		function dR(){			
+			el = document.querySelectorAll('[data-repeat]');
+			for(x in el){
+				el[x].style = "display: none;";
+				dataRepeat(el[x], el[x].getAttribute('data-repeat'), 0)
+			}
+		}
+		setTimeout(function(){
+			dR();
+		}, app.modules.length * 2000);
+		/* End Javascript */
+	</script>
+</body></html>
