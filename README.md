@@ -28,20 +28,9 @@ HTML Table:
   Name: 
   "games"
   HTML:
-  <div class="col-6 float-left p-1 text-light">
-   <h3 class="h3">Check out our new Users!</h3>
-   <p class="lead">
-    Our users who have registered on our platform just recently.<br/>
-    <small>
-     These are our newest users:
-    </small>
-   </p>
-   <ul class="list-group">
-    <li class="list-group-item bg-darker" data-repeat="games">
+    &lt;li class="list-group-item bg-darker" data-repeat="games">
      {{x2}}
-    </li>
-   </ul>
-  </div>
+    </li&gt;
   DataString:
   ["games"]
 
